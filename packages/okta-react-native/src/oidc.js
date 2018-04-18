@@ -154,3 +154,33 @@ export async function refreshAccessToken(client, options) {
 
   return delve(authContext, 'accessToken.string');
 }
+
+export async function revoke(client, options) {
+  const wellKnown = await tokenClientUtil.getWellKnown(client);
+
+  options = Object.assign({
+    client_id: client.config.client_id,
+  }, options);
+
+  try {
+    revokeResponse = await tokenClientUtil.request(wellKnown.revocation_endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: util.urlFormEncode(options)
+    });
+  } catch (e) {
+      throw e;
+  }
+
+  const authContext = await tokenClientUtil.getAuthContext(client);
+
+  if (options.token_type_hint === 'access_token') {
+    delete authContext.accessToken;
+  }
+
+  if (options.token_type_hint === 'refresh_token') {
+    delete authContext.refreshToken;
+  }
+}

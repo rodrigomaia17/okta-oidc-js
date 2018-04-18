@@ -502,4 +502,122 @@ describe('TokenClient', () => {
       });
     });
   });
+
+  describe('revoke', () => {
+    it('returns undefined if no tokens', async () => {
+      expect(await ctx.tokenClient.revoke()).toBeUndefined();
+    });
+
+    it('revokes access token if type access_token is given', async () => {
+      mockAuthContext({
+        accessToken: {
+          expiresAt: 1510000001,
+          string: 'dummy_access_token'
+        }
+      });
+      mockFetch([
+        requests.wellKnown,
+        {
+          req: {
+            url: 'http://dummy_issuer/revoke',
+            method: 'POST',
+            body: 'client_id=dummy_client_id&token_type_hint=access_token&token=dummy_access_token'
+          },
+          res: {
+            json: { }
+          }
+        }
+      ]);
+      await ctx.tokenClient.revoke('access_token');
+      expect(await ctx.tokenClient.getAccessToken()).toBeUndefined();
+    });
+
+    it('revokes refresh token if type refresh_token is given', async () => {
+      mockAuthContext({
+        refreshToken: {
+          string: 'dummy_refresh_token'
+        }
+      });
+      mockFetch([
+        requests.wellKnown,
+        {
+          req: {
+            url: 'http://dummy_issuer/revoke',
+            method: 'POST',
+            body: 'client_id=dummy_client_id&token_type_hint=refresh_token&token=dummy_refresh_token'
+          },
+          res: {
+            json: { }
+          }
+        }
+      ]);
+      await ctx.tokenClient.revoke('refresh_token');
+      expect(await ctx.tokenClient.getAccessToken()).toBeUndefined();
+    });
+  });
+
+  it('throws an OidcError if the /revoke call returns an OIDC error', async () => {
+    mockAuthContext({
+      refreshToken: {
+        string: ''
+      }
+    });
+    mockFetch([
+      requests.wellKnown,
+      {
+        req: {
+          url: 'http://dummy_issuer/revoke',
+          method: 'POST',
+          body: 'client_id=dummy_client_id&token_type_hint=refresh_token&token='
+        },
+        res: {
+          status: 400,
+          json: {
+            error: 'invalid_request',
+            error_description: 'The \'token\' parameter is required.',
+          }
+        }
+      }
+    ]);
+    let error;
+    try {
+      await ctx.tokenClient.revoke('refresh_token');
+    } catch(e) {
+      error = e;
+    } finally {
+      expect(error).toBeDefined();
+      expect(error.name).toEqual('OidcError');
+      expect(error.error).toEqual('invalid_request');
+      expect(error.error_description).toEqual('The \'token\' parameter is required.');
+    }
+  });
+
+  it('throws an ApiError if the /revoke call returns an API error', async () => {
+    mockAuthContext({
+      refreshToken: {
+        string: 'dummy_refresh_token'
+      }
+    });
+    mockFetch([
+      requests.wellKnown,
+      {
+        req: {
+          url: 'http://dummy_issuer/revoke',
+          method: 'POST',
+          body: 'client_id=dummy_client_id&token_type_hint=refresh_token&token=dummy_refresh_token'
+        },
+        res: rateLimitError
+      }
+    ]);
+    let error;
+    try {
+      await ctx.tokenClient.revoke('refresh_token');
+    } catch(e) {
+      error = e;
+    } finally {
+      expect(error).toBeDefined();
+      expect(error.name).toEqual('ApiError');
+      expect(error.message).toEqual('API call exceeded rate limit due to too many requests.');
+    }
+  });
 });

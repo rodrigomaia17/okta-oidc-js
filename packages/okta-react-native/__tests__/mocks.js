@@ -152,7 +152,8 @@ export const requests = {
         authorization_endpoint: 'http://dummy_issuer/authorize',
         token_endpoint: 'http://dummy_issuer/token',
         userinfo_endpoint: 'http://dummy_issuer/userinfo',
-        jwks_uri: 'http://dummy_issuer/jwks'
+        jwks_uri: 'http://dummy_issuer/jwks',
+        revocation_endpoint: 'http://dummy_issuer/revoke'
       }
     }
   },

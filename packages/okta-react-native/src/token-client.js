@@ -108,6 +108,27 @@ export default class TokenClient {
     }
   }
 
+  async revoke(token_type) {
+    // Revokes a token given the 'token_type' value
+    var tokenContext = null;
+
+    const authContext = await clientUtil.getAuthContext(this);
+    if (!authContext) return;
+
+    if (token_type === 'access_token') {
+      tokenContext = authContext.accessToken;
+    }
+
+    if (token_type === 'refresh_token') {
+      tokenContext = authContext.refreshToken;
+    }
+
+    await oidc.revoke(this, {
+      token_type_hint: token_type,
+      token: tokenContext.string
+    });
+  }
+
   async signOut() {
     delete this._authContext;
     await SecureStore.deleteItemAsync(this._storageKey);
