@@ -140,6 +140,18 @@ Returns a promise that will fetch the most up-to-date user claims from the [Open
 await tokenClient.getUser();
 ```
 
+### `revoke(token_type)`
+
+Given a `token_type`, this method will call the revocation endpoint with the token (`access_token` or `refresh_token`) to terminate it.
+
+**Note**: This should be performed when the user's session has ended.
+
+```javascript
+await tokenClient.revoke('access_token');
+
+await tokenClient.revoek('refresh_token');
+```
+
 ### `signOut`
 
 Terminates the tokens stored inside of [`SecureStore`](https://docs.expo.io/versions/latest/sdk/securestore.html) to clear the user session.
